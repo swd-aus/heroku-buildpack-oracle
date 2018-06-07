@@ -18,7 +18,7 @@ You'll need to use multiple buildpacks. This buildpack will need to be invoked f
 
 Add the following contents to `.buildpacks`:
 
-    https://github.com/wealthsimple/oracle-heroku-buildpack
+    https://github.com/luizalabs/oracle-heroku-buildpack
     https://github.com/heroku/heroku-buildpack-python
 
 # Configuration (Optional)
