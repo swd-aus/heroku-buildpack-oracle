@@ -20,8 +20,8 @@ Heroku now supports configuring multiple buildpacks natively, or you can use the
 
 Add the following contents to `.buildpacks`:
 
-    https://github.com/luizalabs/oracle-heroku-buildpack
-    https://github.com/heroku/heroku-buildpack-go
+    https://github.com/swd-aus/oracle-heroku-buildpack
+    https://github.com/heroku/heroku-buildpack-ruby
 
 # Configuration (Optional)
 
