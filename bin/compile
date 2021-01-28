@@ -1,45 +1,52 @@
 #!/usr/bin/env bash
-
-set -e
+# bin/compile <build-dir> <cache-dir> <env-dir>
 
 BUILD_DIR=$1
-ENV_DIR=$2
+CACHE_DIR=$2
+ENV_DIR=$3
 
-ORACLE_HOME="${BUILD_DIR}/oracle"
-ORACLE_INSTANT_CLIENT_URL="https://download.oracle.com/otn_software/linux/instantclient/185000/instantclient-basiclite-linux.x64-18.5.0.0.0dbru.zip"
-ORACLE_SQLPLUS="https://download.oracle.com/otn_software/linux/instantclient/185000/instantclient-sqlplus-linux.x64-18.5.0.0.0dbru.zip"
-ORACLE_SDK="https://download.oracle.com/otn_software/linux/instantclient/185000/instantclient-sdk-linux.x64-18.5.0.0.0dbru.zip"
+indent() {
+    echo "       $*" || true
+}
 
-mkdir -p ${ORACLE_HOME}
-curl -s -S -L ${ORACLE_INSTANT_CLIENT_URL} > ${ORACLE_HOME}/oracle_instant_client.zip \
-  && unzip ${ORACLE_HOME}/oracle_instant_client.zip -d ${ORACLE_HOME} \
-  && rm ${ORACLE_HOME}/oracle_instant_client.zip
+VENDOR_DIR=$BUILD_DIR/vendor
+ORACLE_DIR=$VENDOR_DIR/oracle
+INSTANTCLIENT_DIR=$ORACLE_DIR/instantclient_12_2
+PROFILE_D_DIR=$BUILD_DIR/.profile.d
 
-curl -s -S -L ${ORACLE_SQLPLUS} > ${ORACLE_HOME}/oracle_sqlplus.zip \
-  && unzip ${ORACLE_HOME}/oracle_sqlplus.zip -d ${ORACLE_HOME} \
-  && rm ${ORACLE_HOME}/oracle_sqlplus.zip
+BASIC_FILENAME=instantclient-basic-linux.x64-12.2.0.1.0.zip
+SDK_FILENAME=instantclient-sdk-linux.x64-12.2.0.1.0.zip
 
-curl -s -S -L ${ORACLE_SDK} > ${ORACLE_HOME}/oracle_sdk.zip \
-  && unzip ${ORACLE_HOME}/oracle_sdk.zip -d ${ORACLE_HOME} \
-  && rm ${ORACLE_HOME}/oracle_sdk.zip
+MIRROR_BASIC=https://download.oracle.com/otn/linux/instantclient/122010/instantclient-basic-linux.x64-12.2.0.1.0.zip
+MIRROR_SDK=https://download.oracle.com/otn/linux/instantclient/122010/instantclient-sdk-linux.x64-12.2.0.1.0.zip
 
-ORACLE_INSTANT_CLIENT_DIR="${ORACLE_HOME}/instantclient_18_5"
+if [ ! -f $CACHE_DIR/$BASIC_FILENAME ]; then
+    indent "Downloading $BASIC_FILENAME..."
+    wget -O $CACHE_DIR/$BASIC_FILENAME $MIRROR_BASIC
+fi
 
-mkdir -p ${BUILD_DIR}/.profile.d
+if [ ! -f $CACHE_DIR/$SDK_FILENAME ]; then
+    indent "Downloading $SDK_FILENAME..."
+    wget -O $CACHE_DIR/$SDK_FILENAME $MIRROR_SDK
+fi
 
-cat <<EOF > ${BUILD_DIR}/.profile.d/oracle.sh
-  export ORACLE_HOME=app/oracle
-  export PATH=app/oracle/bin:\$PATH
-  export ORACLE_SID=xe
-  export ORACLE_SYSTEM_PASSWORD=qwerty123
-  export LD_LIBRARY_PATH=app/oracle/instantclient_18_5:/app/.apt/lib/x86_64-linux-gnu:\$LD_LIBRARY_PATH
-  export DYLD_LIBRARY_PATH=app/oracle/instantclient_18_5:\$DYLD_LIBRARY_PATH
-  export OCI_LIB_DIR=app/oracle/instantclient_18_5
-  export OCI_INC_DIR=app/oracle/instantclient_18_5/sdk/include
-  export TNS_ADMIN=app/oracle/instantclient_18_5/network/admin
+mkdir -p $ORACLE_DIR
+indent "Extracting $BASIC_FILENAME..."
+unzip -qq $CACHE_DIR/$BASIC_FILENAME -d $ORACLE_DIR
+indent "Extracting $SDK_FILENAME..."
+unzip -qq $CACHE_DIR/$SDK_FILENAME -d $ORACLE_DIR
+
+indent "Symlinking libclntsh.so..."
+ln -s libclntsh.so.12.1 $INSTANTCLIENT_DIR/libclntsh.so
+
+export OCI_LIB_DIR=$INSTANTCLIENT_DIR
+export OCI_INC_DIR=$INSTANTCLIENT_DIR/sdk/include
+
+indent "Saving environment setup script..."
+mkdir -p $PROFILE_D_DIR
+cat << EOF > $PROFILE_D_DIR/oracle.sh
+#!/usr/bin/env bash
+export LD_LIBRARY_PATH="\$LD_LIBRARY_PATH:$HOME/.apt/lib/x86_64-linux-gnu:$HOME/vendor/oracle/instantclient_12_2"
 EOF
 
-source ${BUILD_DIR}/.profile.d/oracle.sh
-
-LD_LIBRARY_PATH_FILE="$ENV_DIR/LD_LIBRARY_PATH"
-echo $ORACLE_HOME >> $LD_LIBRARY_PATH_FILE
+indent "Done."
