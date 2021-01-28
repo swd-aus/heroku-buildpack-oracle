@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# bin/compile <build-dir> <cache-dir> <env-dir>
 
 BUILD_DIR=$1
 CACHE_DIR=$2
 ENV_DIR=$3
+LP_DIR=`cd $(dirname $0); cd ..; pwd`
 
 indent() {
     echo "       $*" || true
@@ -17,17 +17,17 @@ PROFILE_D_DIR=$BUILD_DIR/.profile.d
 BASIC_FILENAME=instantclient-basic-linux.x64-12.2.0.1.0.zip
 SDK_FILENAME=instantclient-sdk-linux.x64-12.2.0.1.0.zip
 
-MIRROR_BASIC=https://www.dropbox.com/s/11f1pkzsw7s6gn8/instantclient-basic-linux.x64-12.2.0.1.0.zip?dl=1
-MIRROR_SDK=https://www.dropbox.com/s/ee47pe3wlb4g58w/instantclient-sdk-linux.x64-12.2.0.1.0.zip?dl=1
+MIRROR_BASIC=https://www.dropbox.com/s/11f1pkzsw7s6gn8
+MIRROR_SDK=https://www.dropbox.com/s/ee47pe3wlb4g58w
 
 if [ ! -f $CACHE_DIR/$BASIC_FILENAME ]; then
     indent "Downloading $BASIC_FILENAME..."
-    wget -O $CACHE_DIR/$BASIC_FILENAME $MIRROR_BASIC
+    curl -# -o $CACHE_DIR/$BASIC_FILENAME $MIRROR_BASIC/$BASIC_FILENAME?dl=1
 fi
 
 if [ ! -f $CACHE_DIR/$SDK_FILENAME ]; then
     indent "Downloading $SDK_FILENAME..."
-    wget -O $CACHE_DIR/$SDK_FILENAME $MIRROR_SDK
+    curl -# -o $CACHE_DIR/$SDK_FILENAME $MIRROR_SDK/$SDK_FILENAME?dl=1
 fi
 
 mkdir -p $ORACLE_DIR
@@ -37,7 +37,7 @@ indent "Extracting $SDK_FILENAME..."
 unzip -qq $CACHE_DIR/$SDK_FILENAME -d $ORACLE_DIR
 
 indent "Symlinking libclntsh.so..."
-ln -s libclntsh.so.12.1 $INSTANTCLIENT_DIR/libclntsh.so
+ln -s libclntsh.so.12.2 $INSTANTCLIENT_DIR/libclntsh.so
 
 export OCI_LIB_DIR=$INSTANTCLIENT_DIR
 export OCI_INC_DIR=$INSTANTCLIENT_DIR/sdk/include
@@ -46,7 +46,11 @@ indent "Saving environment setup script..."
 mkdir -p $PROFILE_D_DIR
 cat << EOF > $PROFILE_D_DIR/oracle.sh
 #!/usr/bin/env bash
-export LD_LIBRARY_PATH="\$LD_LIBRARY_PATH:$HOME/.apt/lib/x86_64-linux-gnu:$HOME/vendor/oracle/instantclient_12_2"
+export LD_LIBRARY_PATH="\$LD_LIBRARY_PATH:/app/.apt/lib/x86_64-linux-gnu:/app/vendor/oracle/instantclient_12_2"
 EOF
+
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/app/.apt/lib/x86_64-linux-gnu:$BUILD_DIR/vendor/oracle/instantclient_12_2"
+
+export | grep -E -e ' (LD_LIBRARY_PATH)='  > "$LP_DIR/export"
 
 indent "Done."
