@@ -46,10 +46,10 @@ indent "Saving environment setup script..."
 mkdir -p $PROFILE_D_DIR
 cat << EOF > $PROFILE_D_DIR/oracle.sh
 #!/usr/bin/env bash
-export LD_LIBRARY_PATH="\$LD_LIBRARY_PATH:/app/.apt/lib/x86_64-linux-gnu:/app/vendor/oracle/instantclient_12_2"
+export LD_LIBRARY_PATH="\$LD_LIBRARY_PATH:$BUILD_DIR/.apt/lib/x86_64-linux-gnu:/app/.apt/lib/x86_64-linux-gnu:/app/vendor/oracle/instantclient_12_2"
 EOF
 
-export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/app/.apt/lib/x86_64-linux-gnu:$BUILD_DIR/vendor/oracle/instantclient_12_2"
+export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$BUILD_DIR/.apt/lib/x86_64-linux-gnu:/app/.apt/lib/x86_64-linux-gnu:$BUILD_DIR/vendor/oracle/instantclient_12_2"
 
 export | grep -E -e ' (LD_LIBRARY_PATH)='  > "$LP_DIR/export"
 
